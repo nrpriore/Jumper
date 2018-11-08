@@ -1,0 +1,18 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		        "workbench.statusBar.feedback.visible": false,
+		        "telemetry.enableCrashReporter": false,
+		        "telemetry.enableTelemetry": false,
+		        "csharp.suppressHiddenDiagnostics": false,
+		        "omnisharp.autoStart": true,
+		        "omnisharp.useGlobalMono": "always",
+	}
+}

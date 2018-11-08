@@ -1,14 +1,17 @@
-﻿using UnityEngine;					// To inherit from MonoBehaviour 
+﻿using UnityEngine;
 
+// Governs movement and physics of the Player object
 public class Player : MonoBehaviour {
 
 	private bool _onGround;			// Is the player on the ground?
+
+	private Rigidbody _rb;
 
 
 #region // Functions
 	// Determine whether the player is eligible to jump
 	private bool CanJump {
-		get{return !Game.Main.Ended && _onGround && gameObject.transform.localPosition.y >= -0.05f;}
+		get{return Game.Active && _onGround && gameObject.transform.localPosition.y >= -0.05f;}
 	}
 	// From the jump height and gravity we deduce the upwards speed for the character to reach at the apex
 	public static float JumpSpeed {
@@ -19,7 +22,7 @@ public class Player : MonoBehaviour {
 
 	// Runs when player is added to scene
 	void Start() {
-		Game.Main.Player = gameObject;
+		_rb = gameObject.GetComponent<Rigidbody>();
 	}
 
 	// Runs every frame
@@ -29,16 +32,14 @@ public class Player : MonoBehaviour {
 				Jump();
 			}
 		}
-		if(Game.Main.Lost) {
+		/*if(Game.Main.Lost) {
 			gameObject.SetActive(false);
-		}
+		}*/
 	}
 
-	// Player jumps
+	// Makes the player jump
 	private void Jump() {
-		Vector3 velocity = gameObject.GetComponent<Rigidbody>().velocity;
-		velocity.y = JumpSpeed;
-		gameObject.GetComponent<Rigidbody>().velocity = velocity;
+		_rb.velocity = new Vector2(_rb.velocity.x, JumpSpeed);
 		_onGround = false;
 	}
 
@@ -48,7 +49,7 @@ public class Player : MonoBehaviour {
 			case "Platform":
 				_onGround = true;
 				if(CanJump) {
-					Game.Main.PlayerLand(col.transform.parent.gameObject.GetComponent<Platform>());
+					col.transform.parent.gameObject.GetComponent<Platform>().Land();
 				}
 				break;
 		}

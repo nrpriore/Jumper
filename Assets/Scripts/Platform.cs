@@ -1,49 +1,74 @@
-﻿using UnityEngine;					// To inherit from MonoBehaviour 
+﻿using UnityEngine;
 
+// Governs the creation and movement of platforms
 public class Platform : MonoBehaviour {
 
-	public int ID;
-	public bool Landed;
-	public float PWidth;
+	private static Platform _newestPlatform;
+	private bool _landed;
+	private float _pWidth;
+	private int _typeID; // 0 normal, 1 first platform, 2 final platform
 
-	// Creates a platform with size parameter for scale of middle piece
-	public void CreatePlatform(int size) {
-		// Load the objects from resources
-		GameObject pLeft	= Resources.Load<GameObject>("Components/PLeft");
-		GameObject pMid 	= Resources.Load<GameObject>("Components/PMid");
-		GameObject pRight 	= Resources.Load<GameObject>("Components/PRight");
-		// Instantiate the objects into the scene with parent gameobject
-		pLeft 	= Instantiate(pLeft ,gameObject.transform) as GameObject;
-		pMid 	= Instantiate(pMid  ,gameObject.transform) as GameObject;
-		pRight 	= Instantiate(pRight,gameObject.transform) as GameObject;
-		// Calculate transform variables. Offset is to make right edge of platform at x = 0 for easier spawning
-		pMid.transform.localScale = new Vector3(pMid.transform.localScale.x * size,pMid.transform.localScale.y,pMid.transform.localScale.z);
-		float pMidX = (pLeft.GetComponent<MeshRenderer>().bounds.size.x / 2f) + (pMid.GetComponent<MeshRenderer>().bounds.size.x / 2f);
-		float pRightX = 2f * pMidX;
-		float _offsetX = - pRightX - (pRight.GetComponent<MeshRenderer>().bounds.size.x / 2f);
-		// Finalize transforms
-		pLeft.transform.localPosition += Vector3.right * _offsetX;
-		pMid.transform.localPosition += Vector3.right * (pMidX + _offsetX);
-		pRight.transform.localPosition += Vector3.right * (pRightX + _offsetX);
-		// Set name for collision check
-		pLeft.name = "Platform";
-		pMid.name = "Platform";
-		pRight.name = "Platform";
+	//---------------------------------------------------------------
+	// Runs on platform creation
+	void Start() {
 
-		// Set public vars
-		PWidth = 	pLeft.GetComponent<MeshRenderer>().bounds.size.x + 
-					pMid.GetComponent<MeshRenderer>().bounds.size.x + 
-					pRight.GetComponent<MeshRenderer>().bounds.size.x;
-		ID = Game.Main.NumPlatforms;
 	}
-	
+
 	// Runs every frame
 	void Update () {
-		if(!Game.Main.Ended) {
-			transform.localPosition -= Vector3.right * Game.Main.SpeedMult;
+		if(Game.Active) {
+			transform.localPosition -= Vector3.right * Game.SpeedMult;
+
+			if(_newestPlatform == this && transform.localPosition.x <= Config.PLATFORM_STARTX - Game.GapSize) {
+				if(Game.TriggerFinalPlatform) {
+					Platform.Create(1000);
+				}
+				else {
+					int size = (int)(Random.value * (1 - Game.TimeRatio) * 8f) + (int)(Random.value * 8f);
+					Platform.Create(size);
+				}
+			}
 		}
-		if(gameObject.transform.localPosition.x <= -2f * Game.Main.PlatformStartX) {
+		if(gameObject.transform.localPosition.x <= -2f * Config.PLATFORM_STARTX) {
 			Destroy(gameObject);
+		}
+	}
+
+	// Sets the transform properties of the new platform
+	public static void Create(int size, int typeID = 0) {
+		// Initialize the parent platform and child components
+		Platform p = Instantiate<GameObject>(Prefabs.Platform).GetComponent<Platform>();
+		Transform pt = p.transform;
+		p._typeID = typeID;
+
+		Transform pLeft = Instantiate(Prefabs.PLeft, pt).GetComponent<Transform>();
+		Transform pMid = Instantiate(Prefabs.PMid , pt).GetComponent<Transform>();
+		Transform pRight = Instantiate(Prefabs.PRight, pt).GetComponent<Transform>();
+
+		// Set transform variables. Move right edge of platform to x = 0 (relative to parent) for easier spawning
+		pMid.localScale = new Vector3(pMid.localScale.x * size, pMid.localScale.y, pMid.localScale.z);
+		float pRightX = -pRight.GetComponent<MeshRenderer>().bounds.size.x / 2f;
+		float pMidX = (2f * pRightX) - (pMid.GetComponent<MeshRenderer>().bounds.size.x / 2f);
+		float pLeftX = (2f * pMidX) - pRightX;
+		p._pWidth = - pMidX * 2f;
+
+		pLeft.localPosition += Vector3.right * pLeftX;
+		pMid.localPosition += Vector3.right * pMidX;
+		pRight.localPosition += Vector3.right * pRightX;
+
+		float spawnX = (typeID == 1)? Config.PLATFORM_STARTX : _newestPlatform.transform.localPosition.x + p._pWidth + Game.GapSize;
+		pt.localPosition = new Vector3(spawnX, -1f, 0);
+
+		// Set names for collision check
+		pLeft.name = pMid.name = pRight.name = "Platform";
+
+		p._landed = (typeID == 1)? true : false;
+		_newestPlatform = p;
+	}
+
+	public void Land() {
+		if(!_landed) {
+			_landed = true;
 		}
 	}
 }
