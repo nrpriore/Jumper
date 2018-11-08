@@ -16,9 +16,9 @@ public class Game : MonoBehaviour {
 		get{return _triggerFinalPlatform;}
 	}
 	// The player's gameobject
-	private static GameObject _player;
-	public static GameObject Player {
-		get{return _player;}
+	private static GameObject _currPlayer;
+	public static GameObject CurrPlayer {
+		get{return _currPlayer;}
 	}
 
 	// Stats
@@ -36,11 +36,7 @@ public class Game : MonoBehaviour {
 	}
 	// Returns the size of the gap between platforms based on game speed
 	public static float GapSize {
-		get{return 22f * SpeedMult;}
-	}
-	// Returns when player has lost
-	public static bool Lost {
-		get{return (_player.transform.localPosition.y <= -20f) || !_player.activeSelf;}
+		get{return 0.83f * Player.JumpDistance;}
 	}
 #endregion
 
@@ -56,8 +52,7 @@ public class Game : MonoBehaviour {
 		_triggerFinalPlatform = false;
 
 		// Initialize starting objects
-		CreateFirstPlatform();
-		_player = Instantiate<GameObject>(Prefabs.Player);
+		CreateStartingScene();
 		StartCountdown();
 	}
 
@@ -65,6 +60,13 @@ public class Game : MonoBehaviour {
 	// Runs every frame
 	void Update() {
 
+	}
+
+	//---------------------------------------------------------------
+	// Creates the starting platform
+	private void CreateStartingScene() {
+		Platform.Create(12, 1);
+		_currPlayer = Instantiate<GameObject>(Prefabs.Player);
 	}
 
 	//---------------------------------------------------------------
@@ -87,15 +89,15 @@ public class Game : MonoBehaviour {
 	}
 
 	//---------------------------------------------------------------
-	// Creates the starting platform
-	private void CreateFirstPlatform() {
-		Platform.Create(12, 1);
+	// Runs when player lands on final platform
+	public static void WinGame() {
+		_active = false;
 	}
 
 	//---------------------------------------------------------------
-	// Creates the final platform
-	private static void CreateLastPlatform() {
-		Platform.Create(12);
+	// Runs if player falls off screen
+	public static void LoseGame() {
+		_active = false;
 	}
 
 	//---------------------------------------------------------------

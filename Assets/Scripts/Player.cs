@@ -13,10 +13,16 @@ public class Player : MonoBehaviour {
 	private bool CanJump {
 		get{return Game.Active && _onGround && gameObject.transform.localPosition.y >= -0.05f;}
 	}
-	// From the jump height and gravity we deduce the upwards speed for the character to reach at the apex
-	public static float JumpSpeed {
+	// From the jump height (1.5f) and gravity we deduce the upwards speed for the character to reach at the apex
+	private static float JumpSpeed {
 		get{return Mathf.Sqrt(-2f * (1.5f) * Physics.gravity.y);}
- 	}
+	}
+	private static float JumpTime {
+		get{return 2f * -JumpSpeed / Physics.gravity.y;}
+	}
+	public static float JumpDistance {
+		get{return JumpTime * Game.SpeedMult * FPS.AvgFPS;}
+	}
 #endregion
 	
 
@@ -32,9 +38,9 @@ public class Player : MonoBehaviour {
 				Jump();
 			}
 		}
-		/*if(Game.Main.Lost) {
-			gameObject.SetActive(false);
-		}*/
+		else if(gameObject.transform.localPosition.y <= -15) {
+			Game.LoseGame();
+		}
 	}
 
 	// Makes the player jump

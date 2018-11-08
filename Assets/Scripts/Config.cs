@@ -6,8 +6,8 @@ public static class Config {
 	public const float COUNTDOWN_TIME		= 3f;
 	public const float LEVEL_TIME 			= 45f;
 	public const float GRAVITY				= -60f;
-	public const float BASE_MULT			= 1f;
-	public const float MULT_RANGE			= 0.8f;
+	public const float BASE_MULT			= .8f;
+	public const float MULT_RANGE			= 1.2f;
 	public const float PERCENT_TO_MAX_MULT	= 2f/3f; // Max mult at 15s left
 	public const float STAGE_MULT			= 0.01f;
 

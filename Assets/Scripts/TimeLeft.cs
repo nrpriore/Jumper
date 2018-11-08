@@ -26,11 +26,11 @@ public class TimeLeft : MonoBehaviour {
 	//---------------------------------------------------------------
 	// Runs every frame
 	void Update () {
-		if(_container.activeSelf) {
+		if(_container.activeSelf && Game.Active) {
 			_timer += Time.deltaTime;
 			_timeLeftText.text = Mathf.CeilToInt(Config.LEVEL_TIME - _timer).ToString();
 
-			if(_timer >= Config.LEVEL_TIME-1f && !Game.TriggerFinalPlatform) {
+			if(_timer >= Config.LEVEL_TIME-0.5f && !Game.TriggerFinalPlatform) {
 				Game.SetTriggerFinalPlatform();
 			}
 			else if(_timer >= Config.LEVEL_TIME) {
