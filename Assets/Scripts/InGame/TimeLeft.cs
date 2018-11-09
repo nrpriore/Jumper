@@ -28,13 +28,13 @@ public class TimeLeft : MonoBehaviour {
 	void Update () {
 		if(_container.activeSelf && Game.Active) {
 			_timer += Time.deltaTime;
-			_timeLeftText.text = Mathf.CeilToInt(Config.LEVEL_TIME - _timer).ToString();
+			_timeLeftText.text = Mathf.Max(Mathf.CeilToInt(Config.LEVEL_TIME - _timer), 0).ToString();
 
 			if(_timer >= Config.LEVEL_TIME-0.5f && !Game.TriggerFinalPlatform) {
 				Game.SetTriggerFinalPlatform();
 			}
 			else if(_timer >= Config.LEVEL_TIME) {
-				EndTimeLeft();
+				//EndTimeLeft();
 			}
 		}
 	}

@@ -4,7 +4,7 @@
 public static class Config {
 
 	public const float COUNTDOWN_TIME		= 3f;
-	public const float LEVEL_TIME 			= 45f;
+	public const float LEVEL_TIME 			= 10f;
 	public const float GRAVITY				= -60f;
 	public const float BASE_MULT			= .8f;
 	public const float MULT_RANGE			= 1.2f;

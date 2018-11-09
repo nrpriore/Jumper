@@ -19,6 +19,9 @@ public static class Prefabs {
 	public static GameObject PRight {
 		get{return _pRight;}
 	}
+	public static Material PLightMat {
+		get{return _pLightMat;}
+	}
 	//---------------------------------------------------------------
 
 	// Gameplay components
@@ -29,7 +32,7 @@ public static class Prefabs {
 	private static GameObject _pRight;		// The right component of the platform
 
 	// UI components
-	//--
+	private static Material _pLightMat;		// A light material for testing to show platform is moving
 	//--
 	//--
 
@@ -39,6 +42,8 @@ public static class Prefabs {
 		_pLeft 		= Resources.Load<GameObject>("Components/PLeft");
 		_pMid 		= Resources.Load<GameObject>("Components/PMid");
 		_pRight		= Resources.Load<GameObject>("Components/PRight");
+		
+		_pLightMat 	= Resources.Load<Material>("Materials/PLight");
 	}
 
 }

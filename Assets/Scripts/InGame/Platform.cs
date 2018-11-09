@@ -41,27 +41,37 @@ public class Platform : MonoBehaviour {
 		Transform pt = p.transform;
 		p._typeID = typeID;
 
-		Transform pLeft = Instantiate(Prefabs.PLeft, pt).GetComponent<Transform>();
-		Transform pMid = Instantiate(Prefabs.PMid , pt).GetComponent<Transform>();
-		Transform pRight = Instantiate(Prefabs.PRight, pt).GetComponent<Transform>();
-
 		// Set transform variables. Move right edge of platform to x = 0 (relative to parent) for easier spawning
-		pMid.localScale = new Vector3(pMid.localScale.x * size, pMid.localScale.y, pMid.localScale.z);
+		// Right --
+		Transform pRight = Instantiate(Prefabs.PRight, pt).GetComponent<Transform>();
 		float pRightX = -pRight.GetComponent<MeshRenderer>().bounds.size.x / 2f;
-		float pMidX = (2f * pRightX) - (pMid.GetComponent<MeshRenderer>().bounds.size.x / 2f);
-		float pLeftX = (2f * pMidX) - pRightX;
-		p._pWidth = - pMidX * 2f;
-
-		pLeft.localPosition += Vector3.right * pLeftX;
-		pMid.localPosition += Vector3.right * pMidX;
 		pRight.localPosition += Vector3.right * pRightX;
+		// Middle slices --
+		Transform pMid;
+		float pMidWidth = Prefabs.PMid.GetComponent<MeshRenderer>().bounds.size.x;
+		float pMidX = (2f * pRightX) + (pMidWidth / 2f);
+		for(int i = 0; i < size; i++) {
+			pMid = Instantiate(Prefabs.PMid , pt).GetComponent<Transform>();
+			pMidX -= pMidWidth;
+			pMid.localPosition += Vector3.right * pMidX;
+			pMid.name = "Platform";
+
+			if(i % 2 == 0) {
+				pMid.GetComponent<MeshRenderer>().material = Prefabs.PLightMat;
+			}
+		}
+		// Left --
+		Transform pLeft = Instantiate(Prefabs.PLeft, pt).GetComponent<Transform>();
+		float pLeftX = pMidX - (pMidWidth / 2f) + pRightX;
+		pLeft.localPosition += Vector3.right * pLeftX;
+
+		p._pWidth = - pLeftX - pRightX;
 
 		float spawnX = (typeID == 1)? Config.PLATFORM_STARTX : _newestPlatform.transform.localPosition.x + p._pWidth + Game.GapSize;
 		pt.localPosition = new Vector3(spawnX, -1f, 0);
 
 		// Set names for collision check
-		pLeft.name = pMid.name = pRight.name = "Platform";
-
+		pLeft.name = pRight.name = "Platform";
 		p._landed = (typeID == 1)? true : false;
 		_newestPlatform = p;
 	}
