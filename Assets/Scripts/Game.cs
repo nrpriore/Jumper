@@ -1,162 +1,107 @@
-﻿using UnityEngine;					// To inherit from MonoBehaviour 
-using UnityEngine.UI;				// To set UI properties
-using UnityEngine.SceneManagement;	// To change scenes
+﻿using UnityEngine;
+using UnityEngine.SceneManagement;
 
+// Governs game progression, stats, and mechanics
 public class Game : MonoBehaviour {
 
-	// To reference self
-	public static Game Main;
-	// Gameplay constants
-	private const float MAX_TIME 			= 45.999f;
-	private const float MIN_MULT 			= 10f;
-	private const float MULT_RANGE 			= 18f;
-	private const float PERCENT_TO_MAX_MULT	= 2f/3f;
-	private const float GRAVITY 			= -60f;
-	private const float COUNTDOWN			= 3.999f;
-
-	// Gameplay variables
-	public GameObject Player;			// The player's gameobject
-	public bool Ended;					// If the game has ended
-	public bool CountingDown;			// If the game is counting down
-	private float _timer;				// Current duration of game
-	private Platform _finalPlatform;	// Platform that spawns when no time left
-
-	// UI variables
-	public float PlatformStartX;
-	private Transform _prevPlatform;
-
-	// Canvas UI variables
-	public Text GOTimeRem;
-	public Text GONumPlatforms;
-	public GameObject GOMenu;
-	public GameObject GORestart;
-	public Text GOCountdown;
+	// Gameplay variables -------------------------------------------
+	// If the game is actively running
+	private static bool _active;
+	public static bool Active {
+		get{return _active;}
+	}
+	// Tells the newest platform to spawn the final platform
+	private static bool _triggerFinalPlatform;
+	public static bool TriggerFinalPlatform {
+		get{return _triggerFinalPlatform;}
+	}
+	// The player's gameobject
+	private static GameObject _currPlayer;
+	public static GameObject CurrPlayer {
+		get{return _currPlayer;}
+	}
 
 	// Stats
-	public int NumPlatforms;
+	private int _numPlatforms;
 
 
 #region // Functions
-	// Alters speed variable into a value usable by the game
-	public float UISpeedMult {
-		get{return Mathf.Min(MIN_MULT + (TimeRatio * MULT_RANGE), MIN_MULT + MULT_RANGE);}
+	// Returns % of max game speed (0 - 1)
+	public static float TimeRatio {
+		get{return Mathf.Min(TimeLeft.Timer / (Config.PERCENT_TO_MAX_MULT * Config.LEVEL_TIME),1f);}
 	}
-	public float SpeedMult {
-		get{return UISpeedMult / 100f;}
+	// Alters speed variable into a value usable by the game
+	public static float SpeedMult {
+		get{return (Config.BASE_MULT + (TimeRatio * Config.MULT_RANGE)) / 8f;}
 	}
 	// Returns the size of the gap between platforms based on game speed
-	private float GapSize {
-		//get{return 0.5f * (float)_speedMult - 0.5f;}
-		get{return 0.25f * UISpeedMult - 0.5f;}
-	}
-	// Time remaining in match
-	private int TimeRemaining {
-		get{return (int)(MAX_TIME - _timer);}
-	}
-	// Time remaining in countdown
-	private int CountdownRemaining {
-		get{return (int)(COUNTDOWN - _timer);}
-	}
-	// Returns % of max game speed (0 - 1)
-	private float TimeRatio {
-		get{return Mathf.Min(_timer / (PERCENT_TO_MAX_MULT * MAX_TIME),1f);}
-	}
-	// Returns when player has lost
-	public bool Lost {
-		get{return (Player.transform.localPosition.y <= -20f) || !Player.activeSelf;}
+	public static float GapSize {
+		get{return 0.83f * Player.JumpDistance;}
 	}
 #endregion
 
-
-	// Runs on game start
+	//---------------------------------------------------------------
+	// Runs on app startup
 	void Start() {
-		Main = this;
-		// Init vars
-		GOMenu.SetActive(false);
-		GORestart.SetActive(false);
-		_timer = 0f;
-		NumPlatforms = 0;
-		PlatformStartX = 10f * Mathf.Tan(Camera.main.fieldOfView * 0.5f * Mathf.Deg2Rad) * (Camera.main.aspect * 1.5f);
-		Physics.gravity = new Vector3(0,GRAVITY,0);
-		Ended = true;
-		CountingDown = true;
-		// Init objects
-		CreatePlatform();
-		Player = Instantiate(Resources.Load("Prefabs/Player")) as GameObject;
+		// Initialize data
+		Prefabs.LoadPrefabs();
+		Config.SetConfig();
+
+		// Initialize starting vars
+		_active = false;
+		_triggerFinalPlatform = false;
+
+		// Initialize starting objects
+		CreateStartingScene();
+		StartCountdown();
 	}
 
-	// Creates platform based on game variables
-	private Platform CreatePlatform(float diff = 0, bool final = false) {
-		Platform _pc = (Instantiate(Resources.Load("Prefabs/Platform")) as GameObject).GetComponent<Platform>();
-		if(_prevPlatform == null || final) {
-			_pc.CreatePlatform(12);
-		}else {
-			int size = (int)(Random.value * (1 - TimeRatio) * 8f) + (int)(Random.value * 8f);
-			_pc.CreatePlatform(size);
-		}
-		float spawnX = (_prevPlatform == null)? PlatformStartX : PlatformStartX + _pc.PWidth - diff;
-		_pc.gameObject.transform.localPosition = new Vector3(spawnX,-1f,0);
-		_prevPlatform = _pc.gameObject.transform;
-		NumPlatforms++;
-		return _pc;
-	}
-
+	//---------------------------------------------------------------
 	// Runs every frame
 	void Update() {
-		if(CountingDown) {
-			if(CountdownRemaining > 0) {
-				_timer += Time.deltaTime;
-				GOCountdown.text = CountdownRemaining.ToString();
-			}else{
-				_timer = 0f;
-				CountingDown = false;
-				Ended = false;
-				GOCountdown.gameObject.transform.parent.gameObject.SetActive(false);
-			}
-		}else if(Lost) {
-			if(!Ended) {
-				EndGame();
-			}
-		}else{
-			if(TimeRemaining > 0f && !Ended) {
-				// Create platform after gapsize
-				if(_prevPlatform.localPosition.x <= PlatformStartX - GapSize) {
-					CreatePlatform(PlatformStartX - GapSize - _prevPlatform.localPosition.x);
-				}
-				// Set UI variables
-				_timer += Time.deltaTime;
-				GOTimeRem.text = TimeRemaining.ToString();
-			}else if(_finalPlatform == null) {
-				if(_prevPlatform.localPosition.x <= PlatformStartX - GapSize) {
-					_finalPlatform = CreatePlatform(PlatformStartX - GapSize - _prevPlatform.localPosition.x, true);
-				}
-			}
-		}
+
 	}
 
-	// Runs when collision with platforms
-	public void PlayerLand(Platform _platform) {
-		if(_platform.Landed || _platform.ID == 0) {
-			return;
-		}
-		_platform.Landed = true;
-		GONumPlatforms.text = _platform.ID.ToString();
-		if(_finalPlatform != null) {
-			if(_platform.ID == _finalPlatform.ID) {
-				EndGame();
-			}
-		}
+	//---------------------------------------------------------------
+	// Creates the starting platform
+	private void CreateStartingScene() {
+		Platform.Create(12, 1);
+		_currPlayer = Instantiate<GameObject>(Prefabs.Player);
 	}
 
-	private void EndGame() {
-		Ended = true;
-		//GOMenu.SetActive(true);
-		GORestart.SetActive(true);
+	//---------------------------------------------------------------
+	// Starts countdown to begin game, runs on 'Start' button click
+	public static void StartCountdown() {
+		Countdown.StartCountdown();
 	}
 
-	public void BackToMenu() {
-		//SceneManager.LoadSceneAsync("Menu", LoadSceneMode.Single);
+	//---------------------------------------------------------------
+	// Starts game, runs when countdown ends
+	public static void StartGame() {
+		_active = true;
+		TimeLeft.StartTimeLeft();
 	}
+
+	//---------------------------------------------------------------
+	// Triggers final platform creation, runs when timer hits 1s left so you land on final platform around 0s left
+	public static void SetTriggerFinalPlatform() {
+		_triggerFinalPlatform = true;
+	}
+
+	//---------------------------------------------------------------
+	// Runs when player lands on final platform
+	public static void WinGame() {
+		_active = false;
+	}
+
+	//---------------------------------------------------------------
+	// Runs if player falls off screen
+	public static void LoseGame() {
+		_active = false;
+	}
+
+	//---------------------------------------------------------------
+	// Restarts the game scene
 	public void Restart() {
 		SceneManager.LoadSceneAsync("Game", LoadSceneMode.Single);
 	}
